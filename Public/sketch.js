@@ -8,6 +8,7 @@ let playerPos;
 let test;
 var WALL_THICKNESS = 30;
 
+
 //open and connect socket
 let socket = io();
 
@@ -25,9 +26,6 @@ socket.on('newPlayer', function (obj) {
   gamestate = obj;
   playerList = obj.playerList;
 
-  gamestate = obj;
-  playerList = obj.playerList;
-
   //Remove client from playerList
   const index = playerList.indexOf(socket.id);
   if (index > -1) {
@@ -36,6 +34,7 @@ socket.on('newPlayer', function (obj) {
 
   //Set Client as active player and create sprite
   player = gamestate.players[playerID];
+
 
 
 
@@ -50,6 +49,7 @@ function setup() {
   console.log("setup");
 
   createCanvas(windowWidth, 400);
+  
 
   //Create sprites for other players.
   for (let i = 0; i < playerList.length; i++) {
@@ -60,7 +60,7 @@ function setup() {
 
 
   //create player sprite
-  player = createSprite(player.x, player.y, 20, 50);
+  player = createSprite(player.x, player.y, 10, 60);
   player.setDefaultCollider();
   player.maxSpeed = 5;
 
@@ -84,26 +84,28 @@ function draw() {
 
 
 
-
   //Send player Sprite position object when key is pressed
   if (keyIsPressed === true) {
     socket.emit('playerData', playerPos);
   }
 
   //recevie other sprites updated locations. 
-  socket.on('data', function (id) {
+  socket.on('data', function (gameState) {
     for (i = 0; i < playerList.length; i++) {
 
-      otherX = id.players[playerList[i]].x
-      otherY = id.players[playerList[i]].y
+      otherX = gameState.players[playerList[i]].x
+      otherY = gameState.players[playerList[i]].y
     }
   });
 
 
   //remove sprites when players leave.
   socket.on('playerLeft', function (obj) {
+
+    if(obj != undefined){
     console.log(otherPlayerSprites[obj] + " has left.")
     otherPlayerSprites[obj].remove();
+    }
   })
 
 
