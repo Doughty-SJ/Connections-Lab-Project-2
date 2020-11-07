@@ -33,7 +33,7 @@ io.sockets.on('connection', function (socket) {
     console.log("We have a new client: " + socket.id);
 
     //Listen for a message named 'data' from this client
-    socket.on('data', function (data) {
+    socket.on('playerData', function (data) {
 
         //Data can be numbers, strings, objects
         //console.log("Received: 'data' " + data.x +":"+data.y+data.ID);
@@ -43,18 +43,21 @@ io.sockets.on('connection', function (socket) {
 
         //Send the data to all clients, including this one
         //Set the name of the message to be 'data'
-        io.sockets.emit('data', data);
+        io.sockets.emit('data', gameState);
 
         //Send the data to all other clients, not including this one
-        // socket.broadcast.emit('data', data);
+        //socket.broadcast.emit('data', gameState);
 
         //Send the data to just this client
         // socket.emit('data', data);
     });
 
     socket.on('newPlayer', () => {
+        console.log("New Player");
         gameState.players[socket.id] = { x: getRndInteger(50, 750), y: getRndInteger(50, 350) }
         gameState.playerList.push(socket.id);
+
+        socket.emit("newPlayer", gameState);
        
         console.log(gameState);
     })
@@ -71,13 +74,15 @@ io.sockets.on('connection', function (socket) {
             gameState.playerList.splice(index, 1);
         }
 
+        io.sockets.emit("playerLeft",socket.id);
+
 
     });
 });
 
 
 
-setInterval(function () {
-    io.sockets.emit('state', gameState);
-    //console.log(gameState.players);
-}, 1000 / 10);
+// setInterval(function () {
+//     io.sockets.emit('state', gameState);
+//     //console.log(gameState.players);
+// }, 1000 / 10);
