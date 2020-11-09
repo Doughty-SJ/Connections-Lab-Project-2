@@ -1,7 +1,6 @@
 //declare variables
 let gamestate;
 let player;
-let playerList = [];
 let otherPlayerSprites = [];
 let playerPos;
 let updateStateReady = false;
@@ -15,53 +14,50 @@ let socket = io();
 //Listen for confirmation of connection
 socket.on('connect', function () {
   console.log("Connected");
-  playerID = socket.id;
-  console.log("This Client playerID: "+ socket.id);
+  console.log("This Client's playerID: " + socket.id);
   socket.emit('newPlayer');
+  socket.emit('playerJoined');
 });
 
 // On new player organize gamestate data.
 socket.on('newPlayer', function (obj) {
 
   gamestate = obj;
-  playerList = obj.playerList;
 
-  //Remove client from playerList
-  const index = playerList.indexOf(socket.id);
-  if (index > -1) {
-    playerList.splice(index, 1);
-  }
-
-  //Set Client as active player 
-  player = gamestate.players[socket.id];
 
   //data is loaded
   dataIsReady = true;
 
-  console.log("Other socket.IDs on NewPlayer Event: " + playerList);
+  console.log("Other socket.IDs on NewPlayer Event: " + gamestate.playerList);
 })
+
+//Player Joined
+socket.on("playerJoined", function (id) {
+
+  console.log("ID: " + id + " has joined!")
+
+});
 
 //update gamestate. 
 socket.on('data', function (gameState) {
-  console.log(playerList);
+
   console.log("State Update");
   gamestate = gameState;
-  playerList = gameState.playerList;
-  console.log(gamestate.playerList);
+
+
 
 });
 
 
 
+
 //remove sprites when players leave.
-socket.on('playerLeft', function (obj) {
+socket.on('playerLeft', function (id) {
 
-  
+  console.log(id + " has left.")
+  if (otherPlayerSprites[id] != undefined) {
 
-
-  if (otherPlayerSprites[obj] != undefined) {
-    console.log(obj + " has left.")
-    otherPlayerSprites[obj].remove();
+    otherPlayerSprites[id].remove();
   }
 
   socket.emit("data");
@@ -69,32 +65,32 @@ socket.on('playerLeft', function (obj) {
 
 })
 
+
 function gameSprites() {
   //create player sprite
-  player = createSprite(player.x, player.y, 10, 60);
+  player = createSprite(gamestate.players[socket.id].x, gamestate.players[socket.id].y, 10, 60);
   player.setDefaultCollider();
   player.maxSpeed = 5;
 
   //Create sprites for other players.
-  for (let i = 0; i < playerList.length; i++) {
-
-    console.log(gamestate.players[playerList[i]]);
-    otherPlayerSprites[playerList[i]] = createSprite(gamestate.players[playerList[i]].x, gamestate.players[playerList[i]].y, 20, 50);
+  for (let i = 0; i < gamestate.playerList.length; i++) {
+    if (gamestate.playerList[i] != socket.id) {
+      otherPlayerSprites[gamestate.playerList[i]] = createSprite(gamestate.players[gamestate.playerList[i]].x, gamestate.players[gamestate.playerList[i]].y, 20, 50);
+    }
   }
-
   dataIsReady = false;
   updateStateReady = true;
 }
 
 function updateState() {
-  for (i = 0; i < playerList.length; i++) {
+  for (i = 0; i < gamestate.playerList.length; i++) {
 
-    if (otherPlayerSprites[playerList[i]] != undefined) {
-      otherPlayerSprites[playerList[i]].position.x = gamestate.players[playerList[i]].x;
-      otherPlayerSprites[playerList[i]].position.y = gamestate.players[playerList[i]].y;
+    if (otherPlayerSprites[gamestate.playerList[i]] != undefined) {
+      otherPlayerSprites[gamestate.playerList[i]].position.x = gamestate.players[gamestate.playerList[i]].x;
+      otherPlayerSprites[gamestate.playerList[i]].position.y = gamestate.players[gamestate.playerList[i]].y;
     }
   }
-  
+
 }
 
 
@@ -121,6 +117,7 @@ function setup() {
 
 function draw() {
   background(255, 255, 255);
+  
 
   if (dataIsReady) {
     gameSprites();
@@ -130,14 +127,10 @@ function draw() {
   }
 
 
-
-
   //Send player Sprite position object when key is pressed
   if (keyIsPressed === true) {
     socket.emit('playerData', playerPos);
   }
-
-
 
   //Movement Keycode W = 87 , A = 65 , S = 83, D = 68
   if (keyDown("A")) {

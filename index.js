@@ -34,6 +34,12 @@ io.sockets.on('connection', function (socket) {
     gameState.players[socket.id] = { x: getRndInteger(50, 750), y: getRndInteger(50, 350) }
     gameState.playerList.push(socket.id);
 
+    socket.on("playerJoined", () => {
+        socket.broadcast.emit("playerJoined", socket.id)
+    })
+
+
+
 
     //Listen for a message named 'data' from this client
     socket.on('playerData', function (data) {
@@ -47,6 +53,7 @@ io.sockets.on('connection', function (socket) {
         //Send the data to all clients, including this one
         //Set the name of the message to be 'data'
         io.sockets.emit('data', gameState);
+        
 
         //Send the data to all other clients, not including this one
         //socket.broadcast.emit('data', gameState);
@@ -56,11 +63,11 @@ io.sockets.on('connection', function (socket) {
     });
 
     socket.on('newPlayer', () => {
-
         socket.emit("newPlayer", gameState);
         console.log(gameState);
-
     })
+
+
 
 
     //Listen for this client to disconnect
@@ -76,6 +83,7 @@ io.sockets.on('connection', function (socket) {
 
         io.sockets.emit("playerLeft", socket.id);
         io.sockets.emit('data', gameState);
+    
 
 
     });
