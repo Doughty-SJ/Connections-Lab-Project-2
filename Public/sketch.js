@@ -1,11 +1,11 @@
 //declare variables
-let playerID;
 let gamestate;
 let player;
 let playerList = [];
 let otherPlayerSprites = [];
 let playerPos;
-let test;
+let updateStateReady = false;
+let dataIsReady = false;
 var WALL_THICKNESS = 30;
 
 
@@ -16,12 +16,12 @@ let socket = io();
 socket.on('connect', function () {
   console.log("Connected");
   playerID = socket.id;
+  console.log("This Client playerID: "+ socket.id);
   socket.emit('newPlayer');
 });
 
+// On new player organize gamestate data.
 socket.on('newPlayer', function (obj) {
-
-  console.log('new player');
 
   gamestate = obj;
   playerList = obj.playerList;
@@ -32,24 +32,48 @@ socket.on('newPlayer', function (obj) {
     playerList.splice(index, 1);
   }
 
-  //Set Client as active player and create sprite
-  player = gamestate.players[playerID];
+  //Set Client as active player 
+  player = gamestate.players[socket.id];
+
+  //data is loaded
+  dataIsReady = true;
+
+  console.log("Other socket.IDs on NewPlayer Event: " + playerList);
+})
+
+//update gamestate. 
+socket.on('data', function (gameState) {
+  console.log(playerList);
+  console.log("State Update");
+  gamestate = gameState;
+  playerList = gameState.playerList;
+  console.log(gamestate.playerList);
+
+});
 
 
 
+//remove sprites when players leave.
+socket.on('playerLeft', function (obj) {
+
+  
+
+
+  if (otherPlayerSprites[obj] != undefined) {
+    console.log(obj + " has left.")
+    otherPlayerSprites[obj].remove();
+  }
+
+  socket.emit("data");
+  dataIsReady = false;
 
 })
 
-
-
-
-
-function setup() {
-
-  console.log("setup");
-
-  createCanvas(windowWidth, 400);
-  
+function gameSprites() {
+  //create player sprite
+  player = createSprite(player.x, player.y, 10, 60);
+  player.setDefaultCollider();
+  player.maxSpeed = 5;
 
   //Create sprites for other players.
   for (let i = 0; i < playerList.length; i++) {
@@ -58,11 +82,27 @@ function setup() {
     otherPlayerSprites[playerList[i]] = createSprite(gamestate.players[playerList[i]].x, gamestate.players[playerList[i]].y, 20, 50);
   }
 
+  dataIsReady = false;
+  updateStateReady = true;
+}
 
-  //create player sprite
-  player = createSprite(player.x, player.y, 10, 60);
-  player.setDefaultCollider();
-  player.maxSpeed = 5;
+function updateState() {
+  for (i = 0; i < playerList.length; i++) {
+
+    if (otherPlayerSprites[playerList[i]] != undefined) {
+      otherPlayerSprites[playerList[i]].position.x = gamestate.players[playerList[i]].x;
+      otherPlayerSprites[playerList[i]].position.y = gamestate.players[playerList[i]].y;
+    }
+  }
+  
+}
+
+
+
+function setup() {
+
+  console.log("Setup");
+  createCanvas(windowWidth, 400);
 
   //Create Static Barriers
   wallTop = createSprite(width / 2, -WALL_THICKNESS / 2, width + WALL_THICKNESS * 2, WALL_THICKNESS);
@@ -82,6 +122,14 @@ function setup() {
 function draw() {
   background(255, 255, 255);
 
+  if (dataIsReady) {
+    gameSprites();
+  }
+  if (updateStateReady) {
+    updateState();
+  }
+
+
 
 
   //Send player Sprite position object when key is pressed
@@ -89,24 +137,6 @@ function draw() {
     socket.emit('playerData', playerPos);
   }
 
-  //recevie other sprites updated locations. 
-  socket.on('data', function (gameState) {
-    for (i = 0; i < playerList.length; i++) {
-
-      otherX = gameState.players[playerList[i]].x
-      otherY = gameState.players[playerList[i]].y
-    }
-  });
-
-
-  //remove sprites when players leave.
-  socket.on('playerLeft', function (obj) {
-
-    if(obj != undefined){
-    console.log(otherPlayerSprites[obj] + " has left.")
-    otherPlayerSprites[obj].remove();
-    }
-  })
 
 
   //Movement Keycode W = 87 , A = 65 , S = 83, D = 68
@@ -123,7 +153,7 @@ function draw() {
   }
 
   //Position and ID data for Client-player
-  playerPos = { x: player.position.x, y: player.position.y, ID: playerID };
+  playerPos = { x: player.position.x, y: player.position.y, ID: socket.id };
 
   //all sprites bounce at the screen edges
   for (var i = 0; i < allSprites.length; i++) {

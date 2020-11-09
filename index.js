@@ -31,6 +31,9 @@ let io = require('socket.io').listen(server);
 //Listen for individual clients/users to connect
 io.sockets.on('connection', function (socket) {
     console.log("We have a new client: " + socket.id);
+    gameState.players[socket.id] = { x: getRndInteger(50, 750), y: getRndInteger(50, 350) }
+    gameState.playerList.push(socket.id);
+
 
     //Listen for a message named 'data' from this client
     socket.on('playerData', function (data) {
@@ -39,7 +42,7 @@ io.sockets.on('connection', function (socket) {
         //console.log("Received: 'data' " + data.x +":"+data.y+data.ID);
         gameState.players[data.ID].x = data.x;
         gameState.players[data.ID].y = data.y;
-        
+
 
         //Send the data to all clients, including this one
         //Set the name of the message to be 'data'
@@ -53,13 +56,10 @@ io.sockets.on('connection', function (socket) {
     });
 
     socket.on('newPlayer', () => {
-        console.log("New Player");
-        gameState.players[socket.id] = { x: getRndInteger(50, 750), y: getRndInteger(50, 350) }
-        gameState.playerList.push(socket.id);
 
         socket.emit("newPlayer", gameState);
-       
         console.log(gameState);
+
     })
 
 
@@ -74,11 +74,14 @@ io.sockets.on('connection', function (socket) {
             gameState.playerList.splice(index, 1);
         }
 
-        io.sockets.emit("playerLeft",socket.id);
+        io.sockets.emit("playerLeft", socket.id);
+        io.sockets.emit('data', gameState);
 
 
     });
 });
+
+
 
 
 
