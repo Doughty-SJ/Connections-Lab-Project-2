@@ -9,7 +9,6 @@ let playerJoining = false;
 let joiningPlayerID;
 var WALL_THICKNESS = 30;
 
-
 //open and connect socket
 let socket = io();
 
@@ -23,13 +22,10 @@ socket.on('connect', function () {
 
 // On new player organize gamestate data.
 socket.on('newPlayer', function (obj) {
-
   gamestate = obj;
-
 
   //data is loaded
   dataIsReady = true;
-
   console.log("Other socket.IDs on NewPlayer Event: " + gamestate.playerList);
 })
 
@@ -37,27 +33,17 @@ socket.on('newPlayer', function (obj) {
 socket.on("playerJoined", function (data) {
 
   console.log("Player has joined!");
-  console.log(data);
   gamestate = data.gamestate;
-  console.log(gamestate);
-
   joiningPlayerID = data.joinID;
-
   playerJoining = true;
-
 });
 
 //update gamestate. 
 socket.on('data', function (gameState) {
-
   console.log("State Update");
   gamestate = gameState;
-
-
-
+  
 });
-
-
 
 
 //remove sprites when players leave.
@@ -74,20 +60,19 @@ socket.on('playerLeft', function (id) {
 
 })
 
-
 function gameSprites() {
   //create player sprite
   player = createSprite(gamestate.players[socket.id].x, gamestate.players[socket.id].y, 10, 60);
   player.setDefaultCollider();
   player.maxSpeed = 5;
-  player.mass = 0.20
+  player.mass = 0.75
 
   //Create sprites for other players.
   for (let i = 0; i < gamestate.playerList.length; i++) {
     if (gamestate.playerList[i] != socket.id) {
       otherPlayerSprites[gamestate.playerList[i]] = createSprite(gamestate.players[gamestate.playerList[i]].x, gamestate.players[gamestate.playerList[i]].y, 20, 50);
       otherPlayerSprites[gamestate.playerList[i]].setDefaultCollider();
-      otherPlayerSprites[gamestate.playerList[i]].mass = 0.20;
+      otherPlayerSprites[gamestate.playerList[i]].mass = 0.75;
     }
   }
   dataIsReady = false;
@@ -109,7 +94,6 @@ function newPlayerSprite() {
   //new joiner sprite.
   console.log(joiningPlayerID);
   otherPlayerSprites[joiningPlayerID] = createSprite(gamestate.players[joiningPlayerID].x, gamestate.players[joiningPlayerID].y, 20, 50);
-  otherPlayerSprites[joiningPlayerID] = 0.20;
   playerJoining = false;
 
 
@@ -133,7 +117,7 @@ function setup() {
   wallRight = createSprite(width + WALL_THICKNESS / 2, height / 2, WALL_THICKNESS, height);
   wallRight.immovable = true;
 
-  wallRight.shapeColor = wallTop.shapeColor = wallBottom.shapeColor = wallLeft.shapeColor = color(0, 112, 200,165);
+  wallLeft.shapeColor = wallRight.shapeColor =wallTop.shapeColor=wallBottom.shapeColor = color(100, 85, 240);
 
 }
 
@@ -155,6 +139,8 @@ function draw() {
   allSprites.bounce(allSprites);
 
 
+
+  if(updateStateReady){
   //Send player Sprite position object when key is pressed
   if (keyIsPressed === true) {
     socket.emit('playerData', playerPos);
@@ -164,21 +150,20 @@ function draw() {
   if (keyDown("A")) {
     player.rotation -= 4;
   }
-  else if (keyDown("D")) {
+  if (keyDown("D")) {
     player.rotation += 4;
   }
-  else if (keyDown("W")) {
+  if (keyDown("W")) {
     player.addSpeed(0.2, player.rotation);
   }
-  else if (keyDown("S")) {
-    player.addSpeed(-0.2, player.rotation);
-  }else {
+  else {
     player.setSpeed(0.0);
   }
 
+
   //Position and ID data for Client-player
   playerPos = { x: player.position.x, y: player.position.y, ID: socket.id };
-
+  }
   //all sprites bounce at the screen edges
   for (var i = 0; i < allSprites.length; i++) {
     var s = allSprites[i];
