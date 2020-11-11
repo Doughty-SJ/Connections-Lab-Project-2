@@ -6,7 +6,7 @@ app.use('/', express.static('public'));
 //Initialize the actual HTTP server
 let http = require('http');
 let server = http.createServer(app);
-let port = process.env.PORT || 3000;
+let port = process.env.PORT || 5000;
 server.listen(port, () => {
     console.log("Server listening at port: " + port);
 });
@@ -31,11 +31,20 @@ let io = require('socket.io').listen(server);
 //Listen for individual clients/users to connect
 io.sockets.on('connection', function (socket) {
     console.log("We have a new client: " + socket.id);
-    gameState.players[socket.id] = { x: getRndInteger(50, 750), y: getRndInteger(50, 350) }
+    gameState.players[socket.id] = { x: getRndInteger(50, 550), y: getRndInteger(50, 350) }
     gameState.playerList.push(socket.id);
 
+    // A new Player joing let all other players know. 
     socket.on("playerJoined", () => {
-        socket.broadcast.emit("playerJoined", socket.id)
+        let joinData = {
+
+            "gamestate": gameState,
+            "joinID": socket.id
+        }
+        socket.broadcast.emit("playerJoined", joinData);
+        console.log("?/////////?")
+        console.log(gameState);
+        
     })
 
 
@@ -53,7 +62,7 @@ io.sockets.on('connection', function (socket) {
         //Send the data to all clients, including this one
         //Set the name of the message to be 'data'
         io.sockets.emit('data', gameState);
-        
+
 
         //Send the data to all other clients, not including this one
         //socket.broadcast.emit('data', gameState);
@@ -83,7 +92,7 @@ io.sockets.on('connection', function (socket) {
 
         io.sockets.emit("playerLeft", socket.id);
         io.sockets.emit('data', gameState);
-    
+        console.log(gameState);
 
 
     });

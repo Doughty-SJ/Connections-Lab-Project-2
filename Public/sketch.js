@@ -5,6 +5,8 @@ let otherPlayerSprites = [];
 let playerPos;
 let updateStateReady = false;
 let dataIsReady = false;
+let playerJoining = false;
+let joiningPlayerID;
 var WALL_THICKNESS = 30;
 
 
@@ -32,9 +34,16 @@ socket.on('newPlayer', function (obj) {
 })
 
 //Player Joined
-socket.on("playerJoined", function (id) {
+socket.on("playerJoined", function (data) {
 
-  console.log("ID: " + id + " has joined!")
+  console.log("Player has joined!");
+  console.log(data);
+  gamestate = data.gamestate;
+  console.log(gamestate);
+
+  joiningPlayerID = data.joinID;
+
+  playerJoining = true;
 
 });
 
@@ -71,11 +80,14 @@ function gameSprites() {
   player = createSprite(gamestate.players[socket.id].x, gamestate.players[socket.id].y, 10, 60);
   player.setDefaultCollider();
   player.maxSpeed = 5;
+  player.mass = 0.20
 
   //Create sprites for other players.
   for (let i = 0; i < gamestate.playerList.length; i++) {
     if (gamestate.playerList[i] != socket.id) {
       otherPlayerSprites[gamestate.playerList[i]] = createSprite(gamestate.players[gamestate.playerList[i]].x, gamestate.players[gamestate.playerList[i]].y, 20, 50);
+      otherPlayerSprites[gamestate.playerList[i]].setDefaultCollider();
+      otherPlayerSprites[gamestate.playerList[i]].mass = 0.20;
     }
   }
   dataIsReady = false;
@@ -93,12 +105,20 @@ function updateState() {
 
 }
 
+function newPlayerSprite() {
+  //new joiner sprite.
+  console.log(joiningPlayerID);
+  otherPlayerSprites[joiningPlayerID] = createSprite(gamestate.players[joiningPlayerID].x, gamestate.players[joiningPlayerID].y, 20, 50);
+  otherPlayerSprites[joiningPlayerID] = 0.20;
+  playerJoining = false;
 
+
+}
 
 function setup() {
 
   console.log("Setup");
-  createCanvas(windowWidth, 400);
+  createCanvas(600, 400);
 
   //Create Static Barriers
   wallTop = createSprite(width / 2, -WALL_THICKNESS / 2, width + WALL_THICKNESS * 2, WALL_THICKNESS);
@@ -113,11 +133,13 @@ function setup() {
   wallRight = createSprite(width + WALL_THICKNESS / 2, height / 2, WALL_THICKNESS, height);
   wallRight.immovable = true;
 
+  wallRight.shapeColor = wallTop.shapeColor = wallBottom.shapeColor = wallLeft.shapeColor = color(0, 112, 200,165);
+
 }
 
 function draw() {
   background(255, 255, 255);
-  
+
 
   if (dataIsReady) {
     gameSprites();
@@ -125,6 +147,12 @@ function draw() {
   if (updateStateReady) {
     updateState();
   }
+  if (playerJoining) {
+    console.log("Creating sprite for new joiner.")
+    newPlayerSprite();
+  }
+
+  allSprites.bounce(allSprites);
 
 
   //Send player Sprite position object when key is pressed
@@ -136,12 +164,15 @@ function draw() {
   if (keyDown("A")) {
     player.rotation -= 4;
   }
-  if (keyDown("D")) {
+  else if (keyDown("D")) {
     player.rotation += 4;
   }
-  if (keyDown("W")) {
+  else if (keyDown("W")) {
     player.addSpeed(0.2, player.rotation);
-  } else {
+  }
+  else if (keyDown("S")) {
+    player.addSpeed(-0.2, player.rotation);
+  }else {
     player.setSpeed(0.0);
   }
 
