@@ -10,7 +10,7 @@ let joiningPlayerID;
 var WALL_THICKNESS = 30;
 
 //open and connect socket
-let socket = io();
+let socket = io('/clients');
 
 //Listen for confirmation of connection
 socket.on('connect', function () {
@@ -42,7 +42,7 @@ socket.on("playerJoined", function (data) {
 socket.on('data', function (gameState) {
   console.log("State Update");
   gamestate = gameState;
-  
+
 });
 
 
@@ -104,6 +104,7 @@ function setup() {
   console.log("Setup");
   createCanvas(600, 400);
 
+
   //Create Static Barriers
   wallTop = createSprite(width / 2, -WALL_THICKNESS / 2, width + WALL_THICKNESS * 2, WALL_THICKNESS);
   wallTop.immovable = true;
@@ -117,7 +118,7 @@ function setup() {
   wallRight = createSprite(width + WALL_THICKNESS / 2, height / 2, WALL_THICKNESS, height);
   wallRight.immovable = true;
 
-  wallLeft.shapeColor = wallRight.shapeColor =wallTop.shapeColor=wallBottom.shapeColor = color(100, 85, 240);
+  wallLeft.shapeColor = wallRight.shapeColor = wallTop.shapeColor = wallBottom.shapeColor = color(100, 85, 240);
 
 }
 
@@ -140,29 +141,29 @@ function draw() {
 
 
 
-  if(updateStateReady){
-  //Send player Sprite position object when key is pressed
-  if (keyIsPressed === true) {
-    socket.emit('playerData', playerPos);
-  }
+  if (updateStateReady) {
+    //Send player Sprite position object when key is pressed
+    if (keyIsPressed === true) {
+      socket.emit('playerData', playerPos);
+    }
 
-  //Movement Keycode W = 87 , A = 65 , S = 83, D = 68
-  if (keyDown("A")) {
-    player.rotation -= 4;
-  }
-  if (keyDown("D")) {
-    player.rotation += 4;
-  }
-  if (keyDown("W")) {
-    player.addSpeed(0.2, player.rotation);
-  }
-  else {
-    player.setSpeed(0.0);
-  }
+    //Movement Keycode W = 87 , A = 65 , S = 83, D = 68
+    if (keyDown("A")) {
+      player.rotation -= 4;
+    }
+    if (keyDown("D")) {
+      player.rotation += 4;
+    }
+    if (keyDown("W")) {
+      player.addSpeed(0.2, player.rotation);
+    }
+    else {
+      player.setSpeed(0.0);
+    }
 
 
-  //Position and ID data for Client-player
-  playerPos = { x: player.position.x, y: player.position.y, ID: socket.id };
+    //Position and ID data for Client-player
+    playerPos = { x: player.position.x, y: player.position.y, ID: socket.id };
   }
   //all sprites bounce at the screen edges
   for (var i = 0; i < allSprites.length; i++) {

@@ -27,6 +27,8 @@ const gameState = {
 
 //Initialize socket.io
 let io = require('socket.io').listen(server);
+let gameSpace = io.of('/gamehost');
+let clientSpace = io.of('/clientspace')
 
 //Listen for individual clients/users to connect
 io.sockets.on('connection', function (socket) {
