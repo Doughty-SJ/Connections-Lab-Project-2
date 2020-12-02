@@ -11,6 +11,7 @@ server.listen(port, () => {
     console.log("Server listening at port: " + port);
 });
 
+let hostConnect;
 hostConnect = false;
 
 //Random Integer Generator credit - https://www.w3schools.com/js/js_random.asp
