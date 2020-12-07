@@ -1,7 +1,5 @@
 let socket = io('/host');
 
-
-
 let agents;
 let agentsPos;
 let gameStateAgentBoxes = {};
@@ -10,6 +8,15 @@ let otherPlayerSprites = [];
 let dataIsReady = false;
 let updateStateReady = false;
 let playerJoining = false;
+let gamestate;
+let q;
+
+
+socket.on("hostConnected", function (data) {
+    console.log("Host Connected");
+    gamestate = data;
+    dataIsReady = true;
+});
 
 
 // On new player organize gamestate data.
@@ -19,7 +26,7 @@ socket.on("clientConnection", function (obj) {
     console.log("Other socket.IDs on NewPlayer Event: " + gamestate.playerList);
 });
 
-//Player Joined
+//Player Joined update gamestate
 socket.on("playerJoined", function (data) {
     console.log("Player has joined!");
     gamestate = data.gamestate;
@@ -28,7 +35,7 @@ socket.on("playerJoined", function (data) {
     playerJoining = true;
 });
 
-//update gamestate
+//update gamestate on data emit //60 times a second
 socket.on("data", function (gameState) {
     //console.log("State Update");
     gamestate = gameState;
@@ -117,9 +124,26 @@ function setup() {
     for (let i = 0; i < 5; i++) {
         createAgent(300 + (20 * i), 140);
     }
-    createAgent(30, 30);
+
+    for (let i = 0; i < 5; i++) {
+
+        createAgent(100 + (20 * i), 200, 15, 15, type = 'red');
 
 
+    }
+    for (let i = 0; i < 5; i++) {
+        createAgent(100 + (20 * i), 220, 15, 15);
+    }
+    for (let i = 0; i < 5; i++) {
+        createAgent(100 + (20 * i), 240, 15, 15);
+    }
+
+
+    createAgent(30, 30, 30, 20, type = 'green');
+
+
+
+    //update neighbor list for each sprite.
     for (let i = 0; i < allSprites.length; i++) {
         allSprites[i].neigbors = getNeighbors();
     }
@@ -137,14 +161,17 @@ function setup() {
         width / 2,
         height / 2,
         10,
-        60
+        50
     );
     player.setDefaultCollider();
     player.maxSpeed = 5;
     player.mass = 3;
     players.add(player);
-    dataIsReady = true;
+    //dataIsReady = true;
+
+
 }
+
 
 function draw() {
     background(255, 255, 255);
@@ -169,39 +196,44 @@ function draw() {
     if (keyDown("A")) {
         player.rotation -= 4;
     }
-    if (keyDown("D")) {
+    else if (keyDown("D")) {
         player.rotation += 4;
     }
     if (keyDown("W")) {
         player.addSpeed(0.2, player.rotation);
+
+    } else if (keyDown('S')) {
+        player.addSpeed(-0.2, player.rotation);
+
     } else {
         player.setSpeed(0.0);
     }
+
 
 
     //Collision Management for agents that does not include HitBox
     agents.collide(agents);
     players.displace(agents);
     players.collide(environment);
+    agents.bounce(environment);
 
 
-
-
-    //Agent movement & behavior  **Add additional logic to test for type**
+    //For each agent movement & behavior  **Add additional logic to test for type**
     for (let i = 0; i < agents.length; i++) {
 
+        //Set agentBox to same position as agent
         agentBoxes[i].position.x = agents[i].position.x;
         agentBoxes[i].position.y = agents[i].position.y;
         agents[i].neighborCount = agentBoxes[i].neighborCount;
 
-
-
+        //Set alone rate 
         if (agents[i].neighborCount < 3) { agents[i].alone = true } else { agents[i].alone = false };
 
 
 
 
-        if (frameCount % 60 == 0) {
+        //Action intervals for agents
+        if (frameCount % 30 == 0) {
             if (agents[i].alone == true) {    //Random Walk
 
                 agents[i].setSpeed(2, getRndInt(0, 360 + (getRndInt(-10, 10))));
@@ -219,30 +251,41 @@ function draw() {
         for (let j = 0; j < agents.length; j++) {
 
 
-            if (agentBoxes[i].overlap(agents[j]) && agentBoxes[i].neighbors["agent" + j].isNeighbor == false) {
+            if (agentBoxes[i].overlap(agents[j]) &&
+                agentBoxes[i].neighbors["agent" + j].isNeighbor == false) {
 
-                //console.log(i + " is neighboring " + j)    //This logs correctly 
 
                 agentBoxes[i].neighborCount++;
 
-                agentBoxes[i].neighbors["agent" + j].isNeighbor = true;  //Fixed for this block.
+                agentBoxes[i].neighbors["agent" + j].isNeighbor = true;
+                agents[i].neighbors = agentBoxes[i].neighbors;
+
+
+
+                // var currentNeighbors = Object.keys(agents[i].neighbors).filter(function (key) {
+                //     if(agents[i].neighbors != undefined)
+                //     return currentNeighbors[key] === true;
+                // });
+
+                // console.log(currentNeighbors);
+
+
+
 
             }
-            else if ((agentBoxes[i].overlap(agents[j]) == false) && agentBoxes[i].neighbors["agent" + j].isNeighbor == true) {
+            else if ((agentBoxes[i].overlap(agents[j]) == false) &&
+                agentBoxes[i].neighbors["agent" + j].isNeighbor == true) {
 
-                //console.log(i + " is No Longer neighboring " + j)
 
                 agentBoxes[i].neighborCount--;
-
                 agentBoxes[i].neighbors["agent" + j].isNeighbor = false;
+
+                agents[i].neighbors = agentBoxes[i].neighbors;
 
             }
 
         };
     }
-
-    //console.log("Agent Box 0:" + agentBoxes[0].neighborCount, "Agent Box 4:" + agentBoxes[4].neighborCount, "Agent Box 8:" + agentBoxes[8].neighborCount);
-    //console.log('agents[0] is : ' + agents[0].alone)
 
 
     //All sprites bounce on the edge of the canvas.
@@ -272,23 +315,17 @@ function draw() {
     socket.emit('agentsData', gameStateAgents);
     socket.emit('agentBoxesData', gameStateAgentBoxes);
 
-    //Sprite Clean Up...??
-    // for(let i = 0 ; i<players.length; i++){
-    //     for(let j = 0; j<gamestate.playerList.length; j++){
-    //         if(players[i]==gamestate.players[j])
-    //     }
-    // }
 }
 
 
 //create agent
-function createAgent(x, y, xWidth = 15, yWidth = 15, type) {
+function createAgent(x, y, xWidth = 15, yWidth = 15, type = "blue") {
 
     //Create agent sprite
     let a = createSprite(x, y, xWidth, yWidth);
     a.setDefaultCollider();
 
-    if (type = 'sheep') {
+    if (type == 'blue') {
         a.shapeColor = "blue";
     } else {
         a.shapeColor = 'red'
@@ -309,8 +346,9 @@ function createAgent(x, y, xWidth = 15, yWidth = 15, type) {
     b.neighborCount = 0;
 
     //Initialize list of possible neighbors.
-    a.neighbors = getNeighbors();
+
     b.neighbors = getNeighbors();
+    a.neighbors = b.neighbors
     a.neighborCount = b.neighborCount;
     b.type = type + "Box";
     agentBoxes.add(b)

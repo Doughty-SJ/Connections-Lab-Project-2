@@ -69,7 +69,7 @@ function gameSprites() {
     gamestate.players[socket.id].x,
     gamestate.players[socket.id].y,
     10,
-    60
+    50
   );
   player.setDefaultCollider();
   player.maxSpeed = 1.5;

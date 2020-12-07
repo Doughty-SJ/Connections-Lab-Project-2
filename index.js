@@ -1,7 +1,7 @@
 //Initialize the express 'app' object
 let express = require('express');
 let app = express();
-app.use('/', express.static('public'));
+app.use('/', express.static('Public'));
 
 //Initialize the actual HTTP server
 let http = require('http');
@@ -38,18 +38,18 @@ let clients = io.of('/clients')
 host.on("connection", function (socket) {
     console.log("Host Connected");
     hostConnected = true;
-    clients.emit("hostConnected");
-
+    clients.emit("hostConnected", gameState);
+    socket.emit('hostConnected', gameState);
     socket.on('agentsData', function (agentsData) {
         gameState.agents = agentsData;
         gameState.agentsList = Object.keys(agentsData);
+        
     });
 
-    socket.on('agentBoxesData', function (agentBoxesData) {
+    host.on('agentBoxesData', function (agentBoxesData) {
         gameState.agentBoxes = agentBoxesData;
         //console.log(gameState.agents);
     });
-
 });
 
 
@@ -80,28 +80,18 @@ clients.on('connection', function (socket) {
 
     //Listen for a message named 'data' from this client
     socket.on('playerData', function (data) {
-
-        //Data can be numbers, strings, objects
-        //console.log("Received: 'data' " + data.x +":"+data.y+data.ID);
+        
         gameState.players[data.ID].x = data.x;
         gameState.players[data.ID].y = data.y;
         gameState.players[data.ID].r = data.r;
 
-        //Send the data to all clients, including this one
-        //Set the name of the message to be 'data'
         clients.emit('data', gameState);
         host.emit('data',gameState);
 
-        //Send the data to all other clients, not including this one
-        //socket.broadcast.emit('data', gameState);
-
-        //Send the data to just this client
-        // socket.emit('data', data);
     });
 
     socket.on('newPlayer', () => {
         socket.emit("newPlayer", gameState);
-        console.log(gameState);
     })
 
     //Listen for this client to disconnect
@@ -131,5 +121,8 @@ setInterval(function () {
     clients.emit('data', gameState);
     host.emit("data", gameState);
     //console.log(gameState.players);
-}, 1000 / 60);
+}, 1000 / 45);
 }
+
+
+
