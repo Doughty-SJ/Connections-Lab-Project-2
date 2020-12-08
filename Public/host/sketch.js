@@ -116,27 +116,28 @@ function setup() {
     players = new Group();
 
     for (let i = 0; i < 5; i++) {
-        createAgent(300 + (20 * i), 100);
-    }
-    for (let i = 0; i < 5; i++) {
-        createAgent(300 + (20 * i), 120);
-    }
-    for (let i = 0; i < 5; i++) {
-        createAgent(300 + (20 * i), 140);
+        for (let j = 0; j < 5; j++) {
+            createAgent(300 + (20 * i), 100 + (20 * j));
+        }
     }
 
     for (let i = 0; i < 5; i++) {
-
-        createAgent(100 + (20 * i), 200, 15, 15, type = 'red');
-
-
+        for (let j = 0; j < 5; j++) {
+            createAgent(300 + (20 * i), 100 + (20 * j),15,15, type = 'red');
+        }
     }
-    for (let i = 0; i < 5; i++) {
-        createAgent(100 + (20 * i), 220, 15, 15);
-    }
-    for (let i = 0; i < 5; i++) {
-        createAgent(100 + (20 * i), 240, 15, 15);
-    }
+ 
+
+    // for (let i = 0; i < 5; i++) {
+
+    //     createAgent(100 + (20 * i), 200, 15, 15, type = 'red');
+    // }
+    // for (let i = 0; i < 5; i++) {
+    //     createAgent(100 + (20 * i), 220, 15, 15, type = 'red');
+    // }
+    // for (let i = 0; i < 5; i++) {
+    //     createAgent(100 + (20 * i), 240, 15, 15, type = 'red');
+    // }
 
 
     createAgent(30, 30, 30, 20, type = 'green');
@@ -157,6 +158,8 @@ function setup() {
         agentBoxes[i].neighbors = getNeighbors();
 
     }
+
+    //Host Ghost players
     player = createSprite(
         width / 2,
         height / 2,
@@ -167,7 +170,6 @@ function setup() {
     player.maxSpeed = 5;
     player.mass = 3;
     players.add(player);
-    //dataIsReady = true;
 
 
 }
@@ -221,20 +223,23 @@ function draw() {
     //For each agent movement & behavior  **Add additional logic to test for type**
     for (let i = 0; i < agents.length; i++) {
 
+        // like neighbors over totalneighbors
+        let ratio = agents[i].likeNeighbors / agents[i].neighborCount
+
         //Set agentBox to same position as agent
         agentBoxes[i].position.x = agents[i].position.x;
         agentBoxes[i].position.y = agents[i].position.y;
         agents[i].neighborCount = agentBoxes[i].neighborCount;
 
         //Set alone rate 
+
+
         if (agents[i].neighborCount < 3) { agents[i].alone = true } else { agents[i].alone = false };
-
-
 
 
         //Action intervals for agents
         if (frameCount % 30 == 0) {
-            if (agents[i].alone == true) {    //Random Walk
+            if (agents[i].alone == true || ratio < 0.33) {    //Random Walk
 
                 agents[i].setSpeed(2, getRndInt(0, 360 + (getRndInt(-10, 10))));
                 agents[i].rotation = getRndInt(0, 360 + (getRndInt(-10, 10)));
@@ -257,20 +262,13 @@ function draw() {
 
                 agentBoxes[i].neighborCount++;
 
+
                 agentBoxes[i].neighbors["agent" + j].isNeighbor = true;
                 agents[i].neighbors = agentBoxes[i].neighbors;
 
-
-
-                // var currentNeighbors = Object.keys(agents[i].neighbors).filter(function (key) {
-                //     if(agents[i].neighbors != undefined)
-                //     return currentNeighbors[key] === true;
-                // });
-
-                // console.log(currentNeighbors);
-
-
-
+                if (agents[i].type == agents[j].type) {
+                    agents[i].likeNeighbors++;
+                }
 
             }
             else if ((agentBoxes[i].overlap(agents[j]) == false) &&
@@ -282,10 +280,18 @@ function draw() {
 
                 agents[i].neighbors = agentBoxes[i].neighbors;
 
+                if (agents[i].type == agents[j].type) {
+                    agents[i].likeNeighbors--;
+                }
             }
+
+
+
 
         };
     }
+    // agents[4].shapeColor = "orange";
+    // console.log(agents[4].likeNeighbors/agents[4].neighborCount);
 
 
     //All sprites bounce on the edge of the canvas.
@@ -336,6 +342,7 @@ function createAgent(x, y, xWidth = 15, yWidth = 15, type = "blue") {
     a.mass = 1;
     a.type = type;
     a.alone = true;
+    a.likeNeighbors = 0;
     agents.add(a);
 
     //Create agent field of vision or Hitbox
@@ -425,4 +432,3 @@ function staticEdgeBarriers(WALL_THICKNESS) {
 
     wallLeft.shapeColor = wallRight.shapeColor = wallTop.shapeColor = wallBottom.shapeColor = color(100, 85, 240);
 }
-
