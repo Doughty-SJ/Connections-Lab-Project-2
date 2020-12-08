@@ -178,6 +178,7 @@ function draw() {
   players.collide(environment);
   agents.collide(environment);
   players.collide(players);
+  players.displace(agents);
 
 
 
