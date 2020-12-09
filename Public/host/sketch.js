@@ -121,22 +121,22 @@ function setup() {
         }
     }
 
-    for (let i = 0; i < 5; i++) {
-        for (let j = 0; j < 5; j++) {
-            createAgent(300 + (20 * i), 100 + (20 * j),15,15, type = 'red');
-        }
-    }
+    // for (let i = 0; i < 5; i++) {
+    //     for (let j = 0; j < 5; j++) {
+    //         createAgent(300 + (20 * i), 100 + (20 * j),15,15, type = 'red');
+    //     }
+    // }
 
     for (let i = 0; i < 3; i++) {
         for (let j = 0; j < 3; j++) {
             createAgent(100 + (20 * i), 300 + (20 * j),15,15, type = 'red');
         }
     }
-    for (let i = 0; i < 3; i++) {
-        for (let j = 0; j < 3; j++) {
-            createAgent(100 + (20 * i), 300 + (20 * j),15,15,);
-        }
-    }
+    // for (let i = 0; i < 3; i++) {
+    //     for (let j = 0; j < 3; j++) {
+    //         createAgent(100 + (20 * i), 300 + (20 * j),15,15,);
+    //     }
+    // }
  
 
     // for (let i = 0; i < 5; i++) {
