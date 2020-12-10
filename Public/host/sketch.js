@@ -10,6 +10,8 @@ let updateStateReady = false;
 let playerJoining = false;
 let gamestate;
 let q;
+let percentHappy;
+let neighborPreference = 0.50;
 
 
 socket.on("hostConnected", function (data) {
@@ -115,40 +117,31 @@ function setup() {
     agentBoxes = new Group();
     players = new Group();
 
-    for (let i = 0; i < 5; i++) {
-        for (let j = 0; j < 5; j++) {
-            createAgent(300 + (20 * i), 100 + (20 * j));
+    for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 4; j++) {
+            createAgent(300 + (50 * i), 100 + (50 * j));
         }
     }
 
-    // for (let i = 0; i < 5; i++) {
-    //     for (let j = 0; j < 5; j++) {
-    //         createAgent(300 + (20 * i), 100 + (20 * j),15,15, type = 'red');
-    //     }
-    // }
+    for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 4; j++) {
+            createAgent(325 + (50 * i), 125 + (50 * j), 15, 15, type = 'red');
+        }
+    }
 
     for (let i = 0; i < 3; i++) {
         for (let j = 0; j < 3; j++) {
-            createAgent(100 + (20 * i), 300 + (20 * j),15,15, type = 'red');
+            createAgent(100 + (20 * i), 300 + (20 * j), 15, 15, type = 'red');
         }
     }
-    // for (let i = 0; i < 3; i++) {
-    //     for (let j = 0; j < 3; j++) {
-    //         createAgent(100 + (20 * i), 300 + (20 * j),15,15,);
-    //     }
-    // }
- 
+    for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+            createAgent(100 + (20 * i), 300 + (20 * j), 15, 15,);
+        }
+    }
 
-    // for (let i = 0; i < 5; i++) {
 
-    //     createAgent(100 + (20 * i), 200, 15, 15, type = 'red');
-    // }
-    // for (let i = 0; i < 5; i++) {
-    //     createAgent(100 + (20 * i), 220, 15, 15, type = 'red');
-    // }
-    // for (let i = 0; i < 5; i++) {
-    //     createAgent(100 + (20 * i), 240, 15, 15, type = 'red');
-    // }
+
 
 
     createAgent(30, 30, 30, 20, type = 'green');
@@ -242,15 +235,17 @@ function draw() {
         agentBoxes[i].position.y = agents[i].position.y;
         agents[i].neighborCount = agentBoxes[i].neighborCount;
 
-        //Set alone rate 
+        //Set alone rate or Happy
 
+        if (ratio >= neighborPreference) { agents[i].happy = true }
+        else if (ratio < neighborPreference) { agents[i].happy = false };
 
         if (agents[i].neighborCount < 3) { agents[i].alone = true } else { agents[i].alone = false };
 
 
         //Action intervals for agents
         if (frameCount % 30 == 0) {
-            if (agents[i].alone == true || ratio < 0.33) {    //Random Walk
+            if (agents[i].alone == true || ratio < neighborPreference) {    //Random Walk
 
                 agents[i].setSpeed(2, getRndInt(0, 360 + (getRndInt(-10, 10))));
                 agents[i].rotation = getRndInt(0, 360 + (getRndInt(-10, 10)));
@@ -314,11 +309,18 @@ function draw() {
 
     //Emit Data for Agent and AgentBoxes
     for (let i = 0; i < agents.length; i++) {
+        // let happyAgents = 0;
+        // if (agents[i].happy == true) { happyAgents++ };
+        // percentHappy = Math.round((happyAgents / agents.length) * 100);
+        // document.getElementById("percent").innerHTML = "Percent of Agents "Happy":" + percentHappy;
 
         gameStateAgents["agent" + i] = {
             x: agents[i].position.x,
             y: agents[i].position.y
         }
+
+
+
     }
 
     for (let i = 0; i < agentBoxes.length; i++) {
@@ -353,6 +355,7 @@ function createAgent(x, y, xWidth = 15, yWidth = 15, type = "blue") {
     a.mass = 1;
     a.type = type;
     a.alone = true;
+    a.happy = false;
     a.likeNeighbors = 0;
     agents.add(a);
 
